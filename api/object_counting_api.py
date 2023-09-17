@@ -224,6 +224,84 @@ def cumulative_object_counting_y_axis(input_video, detection_graph, category_ind
             cap.release()
             cv2.destroyAllWindows()
 
+def cumulative_object_counting_y_axis_raw(input_video, boxes, scores, classes, category_index, is_color_recognition_enabled, roi, deviation, custom_object_name, targeted_objects=None):
+        total_passed_objects = 0        
+
+        # input video
+        cap = cv2.VideoCapture(input_video)
+
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        fps = int(cap.get(cv2.CAP_PROP_FPS))
+
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        output_movie = cv2.VideoWriter('the_output.avi', fourcc, fps, (width, height))
+
+        total_passed_objects = 0
+
+            # for all the frames that are extracted from input video
+        while(cap.isOpened()):
+            ret, frame = cap.read()                
+
+            if not  ret:
+                print("end of the video file...")
+                break
+            
+            input_frame = frame
+
+            # insert information text to video frame
+            font = cv2.FONT_HERSHEY_SIMPLEX
+
+            # Visualization of the results of a detection.        
+            counter, csv_line, counting_result = vis_util.visualize_boxes_and_labels_on_image_array_y_axis(cap.get(1),
+                                                                                                            input_frame,
+                                                                                                            is_color_recognition_enabled,
+                                                                                                            boxes,
+                                                                                                            classes,
+                                                                                                            scores,
+                                                                                                            category_index,
+                                                                                                            targeted_objects = targeted_objects,
+                                                                                                            y_reference = roi,
+                                                                                                            deviation = deviation,
+                                                                                                            use_normalized_coordinates=True,
+                                                                                                            line_thickness=4)
+
+            # when the object passed over line and counted, make the color of ROI line green
+            if counter == 1:                  
+                cv2.line(input_frame, (0, roi), (width, roi), (0, 0xFF, 0), 5)
+            else:
+                cv2.line(input_frame, (0, roi), (width, roi), (0, 0, 0xFF), 5)
+            
+            total_passed_objects = total_passed_objects + counter
+
+            # insert information text to video frame
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(
+                input_frame,
+                'Detected ' + custom_object_name + ': ' + str(total_passed_objects),
+                (10, 35),
+                font,
+                0.8,
+                (0, 0xFF, 0xFF),
+                2,
+                cv2.FONT_HERSHEY_SIMPLEX,
+                )               
+            
+            cv2.putText(
+                input_frame,
+                'ROI Line',
+                (545, roi-10),
+                font,
+                0.6,
+                (0, 0, 0xFF),
+                2,
+                cv2.LINE_AA,
+                )
+
+            output_movie.write(input_frame)
+            print ("writing frame")
+            #cv2.imshow('object counting',input_frame)
+
 
 def object_counting(input_video, detection_graph, category_index, is_color_recognition_enabled):
 
